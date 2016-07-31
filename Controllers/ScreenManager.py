@@ -19,20 +19,24 @@ class ScreenManager(threading.Thread):
         # Save a buffer where we put each typed number
         self.code_buffer = ""
         self.valid_key = "1234"
+        self.light_status = "on"
 
     def run(self):
         while True:
             if not self.shared_queue.empty():
                 val = self.shared_queue.get()
                 print "Key received from keypad: ", val
-                # we add a star to the screen
-                self.add_star()
-                # add the value to the buffer
-                self.code_buffer += str(val)
-                # if we have 4 number we can test the code
-                if len(self.code_buffer) == 4:
-                    self.test_pin_code()
-                    self.code_buffer = ""
+                if val == "switch_light":
+                    self.switch_light()
+                else:
+                    # we add a star to the screen
+                    self.add_star()
+                    # add the value to the buffer
+                    self.code_buffer += str(val)
+                    # if we have 4 number we can test the code
+                    if len(self.code_buffer) == 4:
+                        self.test_pin_code()
+                        self.code_buffer = ""
             time.sleep(0.1)
 
     def reset(self):
@@ -85,8 +89,8 @@ class ScreenManager(threading.Thread):
         :return:
         """
         if self.status == "disabled":
-            self.set_enabled()
-            self.status = "enabled"
+            # the system was disabled, arming during 20 secondes
+            self.delayed_enableling()
         else:
             self.set_disabled()
             self.status = "disabled"
@@ -100,5 +104,33 @@ class ScreenManager(threading.Thread):
             self.set_disabled()
         else:
             self.set_enabled()
+
+    def delayed_enableling(self):
+        # TODO here we send a notif to the arduino.
+
+        self.reset()
+        self.ui.lcd_print("Arming...")
+        self.ui.set_cursor(2, 2)
+        self.ui.lcd_print("20")
+        time.sleep(5)
+        self.ui.lcd_print(" 15")
+        time.sleep(5)
+        self.ui.lcd_print(" 10")
+        time.sleep(5)
+        self.ui.lcd_print(" 5")
+        time.sleep(5)
+        self.set_enabled()
+        self.status = "enabled"
+
+    def switch_light(self):
+        if self.light_status == "on":
+            # so we switch to off
+            self.ui.bl(0)
+            self.light_status= "off"
+        else:
+            # we switch on on
+            self.ui.bl(103)
+            self.light_status = "on"
+        pass
 
 

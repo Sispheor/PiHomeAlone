@@ -42,7 +42,7 @@ class KeypadManager(threading.Thread):
         map_key["5"] = "5"
         map_key["6"] = "cancel"
         map_key["7"] = "cancel"
-        map_key["8"] = "nothing"
+        map_key["8"] = "switch_light"
         map_key["9"] = "6"
         map_key["10"] = "7"
         map_key["11"] = "8"
