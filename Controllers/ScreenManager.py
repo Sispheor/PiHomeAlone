@@ -13,13 +13,16 @@ class ScreenManager(threading.Thread):
         super(ScreenManager, self).__init__()
         self.shared_queue = q
         self.ui = b.BV4242(0x3d, 1)
-        self.number_of_star = 0
         self.status = "disabled"
         self.set_disabled()
         # Save a buffer where we put each typed number
         self.code_buffer = ""
         self.valid_key = "1234"
         self.light_status = "on"
+        # this is used to stop the arming thread
+        self.pill2kill = None
+        # save if we are currently arming the system
+        self.arming_in_pogress = False
 
     def run(self):
         while True:
@@ -28,6 +31,8 @@ class ScreenManager(threading.Thread):
                 print "Key received from keypad: ", val
                 if val == "switch_light":
                     self.switch_light()
+                elif val == "cancel" or val == "enter":
+                    self.cancel_arming()
                 else:
                     # we add a star to the screen
                     self.add_star()
@@ -66,7 +71,6 @@ class ScreenManager(threading.Thread):
         self.ui.lcd_print("Enter code:")
 
     def add_star(self):
-        self.number_of_star += 1
         self.ui.lcd_print("*")
 
     def turn_light_off(self):
@@ -89,7 +93,7 @@ class ScreenManager(threading.Thread):
         :return:
         """
         if self.status == "disabled":
-            # the system was disabled, arming during 20 secondes
+            # the system was disabled, arming during 20 secondes with thread
             self.delayed_enableling()
         else:
             self.set_disabled()
@@ -106,31 +110,49 @@ class ScreenManager(threading.Thread):
             self.set_enabled()
 
     def delayed_enableling(self):
-        # TODO here we send a notif to the arduino.
+        """
+        Arming the alarm. Count 20 second. During this time the action can be cancelled
+        by the user
+        :return:
+        """
+        def doit(stop_event):
+            while not stop_event.is_set():
+                for x in range(20, 0, -5):
+                    if not stop_event.is_set():
+                        self.ui.lcd_print("%s.." % str(x))
+                        stop_event.wait(5)
+                # counter over, if the user has not cancel, we active the alarm
+                if not stop_event.is_set():
+                    # TODO here we send a notif to the arduino.
+                    self.set_enabled()
+                    self.status = "enabled"
 
+        self.arming_in_pogress = True
         self.reset()
         self.ui.lcd_print("Arming...")
         self.ui.set_cursor(2, 2)
-        self.ui.lcd_print("20")
-        time.sleep(5)
-        self.ui.lcd_print(" 15")
-        time.sleep(5)
-        self.ui.lcd_print(" 10")
-        time.sleep(5)
-        self.ui.lcd_print(" 5")
-        time.sleep(5)
-        self.set_enabled()
-        self.status = "enabled"
+        self.pill2kill = threading.Event()
+        t = threading.Thread(target=doit, args=(self.pill2kill,))
+        t.start()
 
     def switch_light(self):
         if self.light_status == "on":
             # so we switch to off
-            self.ui.bl(0)
-            self.light_status= "off"
+            self.turn_light_off()
+            self.light_status = "off"
         else:
             # we switch on on
-            self.ui.bl(103)
+            self.turn_light_on()
             self.light_status = "on"
         pass
+
+    def cancel_arming(self):
+        if self.arming_in_pogress:
+            self.pill2kill.set()
+            self.reset()
+            self.ui.lcd_print("Cancelled")
+            time.sleep(2)
+            self.set_disabled()
+
 
 
