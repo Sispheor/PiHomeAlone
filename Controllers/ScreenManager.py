@@ -126,6 +126,8 @@ class ScreenManager(threading.Thread):
                     # TODO here we send a notif to the arduino.
                     self.set_enabled()
                     self.status = "enabled"
+                    # stop the thread
+                    self.pill2kill.set()
 
         self.arming_in_pogress = True
         self.reset()
