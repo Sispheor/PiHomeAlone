@@ -113,12 +113,13 @@ void stopSiren(){
 void delayedSiren(){
   Serial.println("Siren will start in 20 sec");
   delayed_siren_asked = true;
-
+  returnedData = DELAY_SIREN_ACK;
 }
 
 void cancelDelayedSiren(){
   Serial.println("Cancel delayed siren");
   delayed_siren_canceled = true;
+  returnedData = CANCEL_DELAY_SIREN;
 }
 
 
