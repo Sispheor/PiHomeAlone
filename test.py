@@ -1,7 +1,8 @@
-from Controllers import ScreenManager, KeypadManager, ArduinoManager
+from Controllers import ScreenManager, KeypadManager, ArduinoManager, Buzzer
 import Queue
 import bv4242 as b
 import i2c
+
 
 # main
 import RPi.GPIO as gpio
@@ -21,24 +22,12 @@ if __name__ == '__main__':
     # arduino = ArduinoManager()
     #
     # arduino.start_siren()
-    import time
+    # import time
     # time.sleep(3)
     # arduino.stop_siren()
     # time.sleep(3)
     # arduino.delayed_siren()
 
-    BUZZER_PIN = 4
-    gpio.cleanup()
-    gpio.setmode(gpio.BCM)
-    gpio.setup(BUZZER_PIN, gpio.OUT)  # Relay enable
-    # defini le port GPIO 4 comme etant une sortie output
-    gpio.output(BUZZER_PIN, gpio.HIGH)
-    time.sleep(2)
-
-    gpio.output(BUZZER_PIN, gpio.LOW)
-
-    time.sleep(2)
-
-    gpio.output(BUZZER_PIN, gpio.HIGH)
-
+    buzzer = Buzzer()
+    buzzer.play()
 
