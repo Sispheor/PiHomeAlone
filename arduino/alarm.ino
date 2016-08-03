@@ -17,6 +17,8 @@ boolean delayed_siren_asked = false;
 boolean delayed_siren_canceled = false;
 // delay to wait before switch on the siren
 long delay_time = 20000;   // 20 seconde delay
+// the pin number where the relay is plugged
+int relay_pin_number = 7;
 
 
 void setup() {
@@ -26,6 +28,10 @@ void setup() {
   Wire.begin(SLAVE_ADDRESS);
   Wire.onReceive(receiveData);
   Wire.onRequest(sendData);
+  // initialize digital pin  as an output. This pin must be plugged to the relay that close the siren circuit
+  pinMode(relay_pin_number, OUTPUT);
+  // by default the relay is off
+  digitalWrite(relay_pin_number, HIGH);
 }
 
 void loop() {
@@ -43,7 +49,6 @@ void loop() {
       delayed_siren_asked = false;
       delayed_siren_canceled = false;
     }
-
   }
 
   // take a breath
@@ -93,13 +98,16 @@ void sendData() {
 
 void startSiren(){
   Serial.println("Start the siren");
-  sirenState = HIGH;  // Turn it off
+  digitalWrite(relay_pin_number, LOW);   // turn the RELAY on (HIGH is the voltage level)
+  sirenState = HIGH;  // save the state
   returnedData = START_SIREN_ACK;
 }
 
 void stopSiren(){
-  Serial.println("Start the siren");
-  returnedData = START_SIREN_ACK;
+  Serial.println("Stop the siren");
+  digitalWrite(relay_pin_number, HIGH);   // turn the RELAY off by making the voltage HIGH
+  sirenState = LOW;
+  returnedData = STOP_SIREN_ACK;
 }
 
 void delayedSiren(){
