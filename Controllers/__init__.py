@@ -1,4 +1,4 @@
 from ScreenManager import ScreenManager
 from KeypadManager import KeypadManager
 from ArduinoManager import ArduinoManager
-from BuzzerManager import Buzzer
+from BuzzerManager import BuzzerManager

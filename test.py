@@ -1,4 +1,4 @@
-from Controllers import ScreenManager, KeypadManager, ArduinoManager, Buzzer
+from Controllers import ScreenManager, KeypadManager, ArduinoManager, BuzzerManager
 import Queue
 import bv4242 as b
 import i2c
@@ -9,16 +9,16 @@ import time
 import RPi.GPIO as gpio
 
 if __name__ == '__main__':
-    # # prepare a queue to share data betwen threads
-    # shared_queue = Queue.Queue()
-    #
-    # # run the screen thread
-    # screen_thread = ScreenManager(shared_queue)
-    # screen_thread.start()
-    #
-    # # run the keypad thread
-    # keypad_thread = KeypadManager(shared_queue)
-    # keypad_thread.start()
+    # prepare a queue to share data betwen threads
+    shared_queue = Queue.Queue()
+
+    # run the screen thread
+    screen_thread = ScreenManager(shared_queue)
+    screen_thread.start()
+
+    # run the keypad thread
+    keypad_thread = KeypadManager(shared_queue)
+    keypad_thread.start()
 
     # arduino = ArduinoManager()
     #
@@ -29,11 +29,11 @@ if __name__ == '__main__':
     # time.sleep(3)
     # arduino.delayed_siren()
 
-    buzzer = Buzzer()
-    buzzer.mode = 2
-    buzzer.start()
-
-    time.sleep(5)
-
-    buzzer.stop()
+    # buzzer = BuzzerManager()
+    # buzzer.mode = 2
+    # buzzer.start()
+    #
+    # time.sleep(5)
+    #
+    # buzzer.stop()
 

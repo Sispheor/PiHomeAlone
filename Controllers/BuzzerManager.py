@@ -4,9 +4,10 @@ import RPi.GPIO as GPIO  # import the GPIO library
 import time  # import the time library
 
 
-class Buzzer(threading.Thread):
+class BuzzerManager(threading.Thread):
+
     def __init__(self):
-        super(Buzzer, self).__init__()
+        super(BuzzerManager, self).__init__()
         GPIO.setmode(GPIO.BCM)
         self.buzzer_pin = 4  # set to GPIO pin 4
         GPIO.setup(self.buzzer_pin, GPIO.IN)

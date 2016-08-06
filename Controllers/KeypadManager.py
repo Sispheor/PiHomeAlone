@@ -5,13 +5,13 @@ import time
 
 class KeypadManager(threading.Thread):
 
-    def __init__(self, q):
+    def __init__(self, shared_queue):
         """
         Class that handle the keypad
         :param q:
         """
         super(KeypadManager, self).__init__()
-        self.shared_queue = q
+        self.shared_queue = shared_queue
         # init the class to call with the keypad
         self.ui = b.BV4242(0x3d, 1)
         # clean the buffer for init

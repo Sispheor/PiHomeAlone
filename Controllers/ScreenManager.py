@@ -1,6 +1,8 @@
 import bv4242 as b
 import threading
 import time
+from BuzzerManager import BuzzerManager
+from ArduinoManager import ArduinoManager
 
 
 class ScreenManager(threading.Thread):
@@ -23,6 +25,10 @@ class ScreenManager(threading.Thread):
         self.pill2kill = None
         # save if we are currently arming the system
         self.arming_in_pogress = False
+        # init a buzzer
+        self.buzzer = BuzzerManager()
+        # init the connection with the arduino
+        self.arduino = ArduinoManager()
 
     def run(self):
         while True:
@@ -45,6 +51,10 @@ class ScreenManager(threading.Thread):
             time.sleep(0.1)
 
     def reset(self):
+        """
+        Clean the lcd screen
+        :return:
+        """
         self.ui.lcd_reset()
         self.ui.clear()
         self.ui.lcd_home()
@@ -62,7 +72,7 @@ class ScreenManager(threading.Thread):
 
     def set_enabled(self):
         """
-        By default the screnn show that the service is Disabled
+        By default the screnn show that the service is Enabled
         """
         self.status = "enabled"
         self.reset()
@@ -71,15 +81,33 @@ class ScreenManager(threading.Thread):
         self.ui.lcd_print("Enter code:")
 
     def add_star(self):
+        """
+        Add a "*" to the last char of the screen
+        :return:
+        """
         self.ui.lcd_print("*")
 
     def turn_light_off(self):
+        """
+        Turn the light of the screen off
+        :return:
+        """
         self.ui.bl(0)
 
     def turn_light_on(self):
+        """
+        Turn the light of the screen on
+        :return:
+        """
         self.ui.bl(103)
 
     def test_pin_code(self):
+        """
+        The user has entered 4 number. We test if typed code is the right one
+        If the code is right, we switch the status of the system
+        If the code is wrong we show a notification on the screen
+        :return:
+        """
         if self.code_buffer == self.valid_key:
             print "Code valid"
             self.switch_status()
@@ -100,6 +128,10 @@ class ScreenManager(threading.Thread):
             self.status = "disabled"
 
     def print_invalid_code(self):
+        """
+        Print Invalid code on the screen and go back to the last status
+        :return:
+        """
         self.reset()
         self.ui.lcd_print("Invalid code")
         time.sleep(2)
@@ -123,11 +155,13 @@ class ScreenManager(threading.Thread):
                         stop_event.wait(5)
                 # counter over, if the user has not cancel, we active the alarm
                 if not stop_event.is_set():
-                    # TODO here we send a notif to the arduino.
+                    # switch status
                     self.set_enabled()
                     self.status = "enabled"
                     # stop the thread
                     self.pill2kill.set()
+                    # stop buzzing
+                    self.buzzer.stop()
 
         self.arming_in_pogress = True
         self.reset()
@@ -136,6 +170,9 @@ class ScreenManager(threading.Thread):
         self.pill2kill = threading.Event()
         t = threading.Thread(target=doit, args=(self.pill2kill,))
         t.start()
+        # we start the buzzer
+        self.buzzer.mode = 2
+        self.buzzer.start()
 
     def switch_light(self):
         if self.light_status == "on":
@@ -149,10 +186,17 @@ class ScreenManager(threading.Thread):
         pass
 
     def cancel_arming(self):
+        """
+        The user has canceled the arming of the system.
+        Go back to Disabled status
+        :return:
+        """
         if self.arming_in_pogress:
             self.pill2kill.set()
             self.reset()
             self.ui.lcd_print("Cancelled")
+            # stop buzzing
+            self.buzzer.stop()
             time.sleep(2)
             self.set_disabled()
 
