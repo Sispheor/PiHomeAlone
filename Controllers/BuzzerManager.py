@@ -1,40 +1,57 @@
+import threading
+
 import RPi.GPIO as GPIO  # import the GPIO library
 import time  # import the time library
 
 
-class Buzzer(object):
+class Buzzer(threading.Thread):
     def __init__(self):
+        super(Buzzer, self).__init__()
         GPIO.setmode(GPIO.BCM)
         self.buzzer_pin = 4  # set to GPIO pin 4
         GPIO.setup(self.buzzer_pin, GPIO.IN)
         GPIO.setup(self.buzzer_pin, GPIO.OUT)
+        # this is used to stop the arming thread
+        self.stop_event = threading.Event()
+        # Select a mode. This is a kind of song.
+        # Mode = 1 Short double bip, when the system detect en entry
+        # Mode = 2 Long bip each second. Used when we arm te system
+        self.mode = 1
         print("Buzzer ready")
 
-    def buzz(self, pitch, duration):
-
-        if pitch == 0:
-            time.sleep(duration)
-            return
-        period = 1.0 / pitch  # in physics, the period (sec/cyc) is the inverse of the frequency (cyc/sec)
-        delay = period / 2  # calcuate the time for half of the wave
-        cycles = int(duration * pitch)  # the number of waves to produce is the duration times the frequency
-
-        for i in range(cycles):  # start a loop from 0 to the variable "cycles" calculated above
-            GPIO.output(self.buzzer_pin, True)  # set pin 18 to high
-            time.sleep(delay)  # wait with pin 18 high
-            GPIO.output(self.buzzer_pin, False)  # set pin 18 to low
-            time.sleep(delay)  # wait with pin 18 low
+    def run(self):
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(self.buzzer_pin, GPIO.OUT)
+        self.play()
 
     def play(self):
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.buzzer_pin, GPIO.OUT)
-        x = 0
+        print "Playing Buzzer until stop event"
+        while not self.stop_event.is_set():
+            self._buzz(self.mode)
 
-        pitches = [500, 1000, 5000]
-        duration = [0.05, 0.05, 0.05]
-        for p in pitches:
-            self.buzz(p, duration[x])  # feed the pitch and duration to the func
-            time.sleep(duration[x])
-            x += 1
-
+        # reset the GPIO ping to cut the sound
         GPIO.setup(self.buzzer_pin, GPIO.IN)
+
+    def _buzz(self, mode):
+
+        if mode == 1:   # this is the mode used when a sensor detect something
+            delay = 0.1
+            for x in range(2):
+                GPIO.output(self.buzzer_pin, False)  # set pin to low, the buzzer is buzzing
+                time.sleep(delay)  # wait with pin low
+                GPIO.output(self.buzzer_pin, True)  # set pin to high
+                time.sleep(delay)  # wait with pin high
+            time.sleep(1)
+
+        if mode == 2:   # this mode is used to count seconds before the system is armed
+            delay = 1
+            GPIO.output(self.buzzer_pin, False)  # set pin to low, the buzzer is buzzing
+            time.sleep(delay)  # wait with pin low
+            GPIO.output(self.buzzer_pin, True)  # set pin to high
+            time.sleep(delay)  # wait with pin high
+
+    def stop(self):
+        print "Stopping Buzzer"
+        self.stop_event.set()

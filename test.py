@@ -2,6 +2,7 @@ from Controllers import ScreenManager, KeypadManager, ArduinoManager, Buzzer
 import Queue
 import bv4242 as b
 import i2c
+import time
 
 
 # main
@@ -22,12 +23,17 @@ if __name__ == '__main__':
     # arduino = ArduinoManager()
     #
     # arduino.start_siren()
-    # import time
+
     # time.sleep(3)
     # arduino.stop_siren()
     # time.sleep(3)
     # arduino.delayed_siren()
 
     buzzer = Buzzer()
-    buzzer.play()
+    buzzer.mode = 2
+    buzzer.start()
+
+    time.sleep(5)
+
+    buzzer.stop()
 
