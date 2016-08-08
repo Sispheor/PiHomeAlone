@@ -1,6 +1,6 @@
 import threading
 import Queue
-from Controllers import ScreenManager, KeypadManager, BuzzerManager
+from Controllers import ScreenManager, KeypadManager, BuzzerManager, ArduinoManager
 import time
 from flask import Flask
 from RestAPI import FlaskAPI
@@ -22,6 +22,9 @@ class MainThread(threading.Thread):
 
         # create an object to manager the screen
         self.screen_manager = ScreenManager()
+
+        # create an object to manage the arduino
+        self.arduino = ArduinoManager()
 
         # run the keypad thread
         self.keypad_thread = KeypadManager(self.shared_queue_keyborad)
@@ -137,6 +140,19 @@ class MainThread(threading.Thread):
         print "Arming canceled"
         self.pill2kill.set()
 
-    def enable_system(self):
-        self.status = "enabled"
-        self.screen_manager.set_enabled()
+    def update_status(self, new_alarm_status, new_siren_status):
+        # first, switch the alamr status
+        if new_alarm_status == "enabled":
+            self.status = "enabled"
+            self.screen_manager.set_enabled()
+        else:
+            self.screen_manager.set_disabled()
+            self.status = "disabled"
+
+        if new_siren_status == "on":
+            print "Start the siren"
+            self.arduino.start_siren()
+        else:
+            print "Stop the siren"
+            self.arduino.stop_siren()
+
