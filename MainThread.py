@@ -121,7 +121,7 @@ class MainThread(threading.Thread):
                     screen_manager.set_enabled()
                     screen_manager.status = "enabled"
                     # stop buzzing
-                    screen_manager.buzzer.stop()
+                    self.buzzer.stop()
                     # Stop this thread
                     self.pill2kill.set()
 

@@ -15,10 +15,6 @@ class ScreenManager:
         self.ui = b.BV4242(0x3d, 1)
         self.set_disabled()
         self.light_status = "on"
-        # init a buzzer
-        self.buzzer = BuzzerManager()
-        # init the connection with the arduino
-        self.arduino = ArduinoManager()
         self.pill2kill = None
 
     def reset(self):

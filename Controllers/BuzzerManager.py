@@ -12,6 +12,8 @@ class BuzzerManager(threading.Thread):
         self.buzzer_pin = 4  # set to GPIO pin 4
         GPIO.setup(self.buzzer_pin, GPIO.IN)
         GPIO.setup(self.buzzer_pin, GPIO.OUT)
+        # by default the buzz does not buzz
+        GPIO.output(self.buzzer_pin, True)  # set pin to high
         # this is used to stop the arming thread
         self.stop_event = threading.Event()
         # Select a mode. This is a kind of song.
