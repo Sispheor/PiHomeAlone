@@ -1,6 +1,6 @@
 import threading
 import Queue
-from Controllers import ScreenManager, KeypadManager
+from Controllers import ScreenManager, KeypadManager, BuzzerManager
 import time
 from flask import Flask
 from RestAPI import FlaskAPI
@@ -10,6 +10,12 @@ class MainThread(threading.Thread):
 
     def __init__(self, group=None, target=None, name=None, args=(), kwargs=None, verbose=None):
         super(MainThread, self).__init__(group, target, name, args, kwargs, verbose)
+        # init a status
+        self.status = "disabled"
+        self.arming_in_pogress = False
+
+        # this is used to stop the arming thread
+        self.pill2kill = None
 
         # prepare a queue to share data between this threads and the keyboard
         self.shared_queue_keyborad = Queue.Queue()
@@ -20,6 +26,9 @@ class MainThread(threading.Thread):
         # run the keypad thread
         self.keypad_thread = KeypadManager(self.shared_queue_keyborad)
         self.keypad_thread.start()
+
+        # Create a buzzer object
+        self.buzzer = BuzzerManager()
 
         # create a shared queue for passing message between flask api and this thread
         shared_queue_message_from_api = Queue.Queue()
@@ -44,6 +53,12 @@ class MainThread(threading.Thread):
                     self.screen_manager.switch_light()
                 elif val == "cancel" or val == "enter":
                     self.screen_manager.cancel_arming()
+                    # stop the thread
+                    self.pill2kill.set()
+                    # stop buzzing
+                    self.buzzer.stop()
+                    time.sleep(2)
+                    self.screen_manager.set_disabled()
                 else:
                     # we add a star to the screen
                     self.screen_manager.add_star()
@@ -64,7 +79,56 @@ class MainThread(threading.Thread):
         """
         if self.code_buffer == self.valid_key:
             print "Code valid"
-            self.screen_manager.switch_status()
+            self._switch_status()
         else:
             print "Code invalid"
-            self.screen_manager.print_invalid_code()
+            self.screen_manager.print_invalid_code(self.status)
+
+    def _switch_status(self):
+        """
+        If we were disabled, switch to enabled, else switch to disabled
+        :return:
+        """
+        if self.status == "disabled":
+            # the system was disabled, arming during 20 secondes with thread
+            self.delayed_enableling()
+        else:
+            self.screen_manager.set_disabled()
+            self.status = "disabled"
+
+    def delayed_enableling(self):
+        """
+        Arming the alarm. Count 20 second. During this time the action can be cancelled
+        by the user
+        :return:
+        """
+        def doit(stop_event, screen_manager):
+            while not stop_event.is_set():
+                for x in range(20, 0, -5):
+                    if not stop_event.is_set():
+                        screen_manager.ui.lcd_print("%s.." % str(x))
+                        stop_event.wait(5)
+                # counter over, if the user has not cancel, we active the alarm
+                if not stop_event.is_set():
+                    # switch status
+                    screen_manager.set_enabled()
+                    screen_manager.status = "enabled"
+                    # stop buzzing
+                    screen_manager.buzzer.stop()
+                    # Stop this thread
+                    self.pill2kill.set()
+
+        self.arming_in_pogress = True
+        self.screen_manager.reset()
+        self.screen_manager.ui.lcd_print("Arming...")
+        self.screen_manager.ui.set_cursor(2, 2)
+        self.pill2kill = threading.Event()
+        t = threading.Thread(target=doit, args=(self.pill2kill, self.screen_manager))
+        t.start()
+        # we start the buzzer
+        self.buzzer.mode = 2
+        self.buzzer.start()
+
+    def cancel_arming(self):
+        print "Arming canceled"
+        self.pill2kill.set()
