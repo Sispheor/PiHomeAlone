@@ -1,19 +1,19 @@
-import bv4242 as b
 import threading
 import time
-from BuzzerManager import BuzzerManager
+
 from ArduinoManager import ArduinoManager
+from BuzzerManager import BuzzerManager
+from Utils import bv4242 as b
 
 
-class ScreenManager(threading.Thread):
+class ScreenManager:
 
-    def __init__(self, q):
+    def __init__(self):
         """
         Thread that handle the screen
         :param q:
         """
-        super(ScreenManager, self).__init__()
-        self.shared_queue = q
+
         self.ui = b.BV4242(0x3d, 1)
         self.status = "disabled"
         self.set_disabled()
@@ -29,26 +29,6 @@ class ScreenManager(threading.Thread):
         self.buzzer = BuzzerManager()
         # init the connection with the arduino
         self.arduino = ArduinoManager()
-
-    def run(self):
-        while True:
-            if not self.shared_queue.empty():
-                val = self.shared_queue.get()
-                print "Key received from keypad: ", val
-                if val == "switch_light":
-                    self.switch_light()
-                elif val == "cancel" or val == "enter":
-                    self.cancel_arming()
-                else:
-                    # we add a star to the screen
-                    self.add_star()
-                    # add the value to the buffer
-                    self.code_buffer += str(val)
-                    # if we have 4 number we can test the code
-                    if len(self.code_buffer) == 4:
-                        self.test_pin_code()
-                        self.code_buffer = ""
-            time.sleep(0.1)
 
     def reset(self):
         """

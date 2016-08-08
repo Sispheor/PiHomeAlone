@@ -1,4 +1,4 @@
-import i2c
+from Utils import i2c
 
 # Message send to the arduino
 START_SIREN = 1         # ask the arduino to turn on the siren

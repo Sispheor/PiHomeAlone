@@ -1,6 +1,7 @@
-import bv4242 as b
 import threading
 import time
+
+from Utils import bv4242 as b
 
 
 class KeypadManager(threading.Thread):
@@ -8,7 +9,7 @@ class KeypadManager(threading.Thread):
     def __init__(self, shared_queue):
         """
         Class that handle the keypad
-        :param q:
+        :param shared_queue: Queue used to return pressed key to the ScreenManager
         """
         super(KeypadManager, self).__init__()
         self.shared_queue = shared_queue

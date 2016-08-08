@@ -1,6 +1,7 @@
 #!/usr/bin/env python
-import i2c
 from time import sleep
+
+import i2c
 
 # commands
 PAD_CLEARBUF   = 1
