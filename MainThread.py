@@ -31,11 +31,11 @@ class MainThread(threading.Thread):
         self.buzzer = BuzzerManager()
 
         # create a shared queue for passing message between flask api and this thread
-        shared_queue_message_from_api = Queue.Queue()
+        self.shared_queue_message_from_api = Queue.Queue()
 
         # create the flask rest api
         app = Flask(__name__)
-        flask_api = FlaskAPI(app, shared_queue_message_from_api)
+        flask_api = FlaskAPI(app, self.shared_queue_message_from_api, self)
         flask_api.start()
 
         # Save a buffer where we put each typed number
@@ -68,6 +68,10 @@ class MainThread(threading.Thread):
                     if len(self.code_buffer) == 4:
                         self._test_pin_code()
                         self.code_buffer = ""
+            if not self.shared_queue_message_from_api.empty():
+                val = self.shared_queue_keyborad.get()
+                print "Received command from API ", val
+
             time.sleep(0.1)
 
     def _test_pin_code(self):
@@ -132,3 +136,7 @@ class MainThread(threading.Thread):
     def cancel_arming(self):
         print "Arming canceled"
         self.pill2kill.set()
+
+    def enable_system(self):
+        self.status = "enabled"
+        self.screen_manager.set_enabled()
