@@ -25,7 +25,7 @@ class FlaskAPI(threading.Thread):
         """
         data = {
             "alarm_status": self.main_thread.status,
-            "siren_status": "off"
+            "siren_status": self.main_thread.arduino.get_siren_status()
         }
         return jsonify(data), 200
 

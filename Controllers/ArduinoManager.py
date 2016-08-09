@@ -61,5 +61,7 @@ class ArduinoManager:
         print response
         if response[0] == SIREN_STATUS_HIGH:
             print "siren is off"
+            return "off"
         else:
             print "Siren is on"
+            return "on"
