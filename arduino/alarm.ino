@@ -4,13 +4,17 @@
 // reveided data from RPI
 int dataReceived =        0;
 int returnedData =        0;
+// returned data
 int START_SIREN_ACK =     10;
 int STOP_SIREN_ACK =      20;
 int DELAY_SIREN_ACK =     30;
 int CANCEL_DELAY_SIREN =  40;
+int PONG =                50;
+int SIREN_STATUS_LOW =     60;
+int SIREN_STATUS_HIGH =    61;
 
 // used to set the siren state
-int sirenState = LOW;
+int sirenState = HIGH;
 // used to know if a delayed start has been asked
 boolean delayed_siren_asked = false;
 // used to know id the use has canceled his request (when the code to disarme the alarm is ok)
@@ -29,9 +33,10 @@ void setup() {
   Wire.onReceive(receiveData);
   Wire.onRequest(sendData);
   // initialize digital pin  as an output. This pin must be plugged to the relay that close the siren circuit
+  sirenState = HIGH;
   pinMode(relay_pin_number, OUTPUT);
   // by default the relay is off
-  digitalWrite(relay_pin_number, HIGH);
+  digitalWrite(relay_pin_number, sirenState);
 }
 
 void loop() {
@@ -88,6 +93,12 @@ void receiveData(int byteCount) {
       case 4: // cancel the delayed siren
         cancelDelayedSiren();
         break;
+      case 5: // ping
+        pong();
+      break;
+      case 6: // get the current siren status
+        get_siren_status();
+        break;
     }
   }
 }
@@ -99,14 +110,14 @@ void sendData() {
 void startSiren(){
   Serial.println("Start the siren");
   digitalWrite(relay_pin_number, LOW);   // turn the RELAY on (HIGH is the voltage level)
-  sirenState = HIGH;  // save the state
+  sirenState = LOW;  // save the state
   returnedData = START_SIREN_ACK;
 }
 
 void stopSiren(){
   Serial.println("Stop the siren");
   digitalWrite(relay_pin_number, HIGH);   // turn the RELAY off by making the voltage HIGH
-  sirenState = LOW;
+  sirenState = HIGH;
   returnedData = STOP_SIREN_ACK;
 }
 
@@ -122,21 +133,18 @@ void cancelDelayedSiren(){
   returnedData = CANCEL_DELAY_SIREN;
 }
 
+void pong(){
+  Serial.println("Received ping, return pong");
+  returnedData = PONG;
+}
 
+void get_siren_status(){
+  if (sirenState == LOW){
+    Serial.println("Siren status LOW");
+    returnedData = SIREN_STATUS_LOW;
+  }else{
+    Serial.println("Siren status HIGH");
+    returnedData = SIREN_STATUS_HIGH;
+  }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+}

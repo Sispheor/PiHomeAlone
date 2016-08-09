@@ -5,12 +5,17 @@ START_SIREN = 1         # ask the arduino to turn on the siren
 STOP_SIREN = 2          # ask the arduino to stop the siren
 DELAY_SIREN = 3         # ask the arduino to start the siren in 20 sec
 CANCEL_DELAY_SIREN = 4  # cancel delay siren
+PING = 5                # Ping the arduino
+GET_SIREN_STATE = 6     # Get the cuirrent status of the siren
 
 # Response from arduino
 START_SIREN_ACK = 10
 STOP_SIREN_ACK = 20
 DELAY_SIREN_ACK = 30
 CANCEL_DELAY_SIREN_ACK = 40
+PONG = 50
+SIREN_STATUS_LOW = 60
+SIREN_STATUS_HIGH = 61
 
 
 class ArduinoManager:
@@ -44,3 +49,17 @@ class ArduinoManager:
         self.bus.i2c([CANCEL_DELAY_SIREN], 0)
         response = self.bus.read(1)
         print response
+
+    def ping(self):
+        self.bus.i2c([PING], 0)
+        response = self.bus.read(1)
+        print response
+
+    def get_siren_status(self):
+        self.bus.i2c([GET_SIREN_STATE], 0)
+        response = self.bus.read(1)
+        print response
+        if response[0] == SIREN_STATUS_HIGH:
+            print "siren is off"
+        else:
+            print "Siren is on"
