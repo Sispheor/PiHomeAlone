@@ -32,12 +32,12 @@ class BuzzerManager(threading.Thread):
         GPIO.setup(self.buzzer_pin, GPIO.OUT)
         print "Playing Buzzer until stop event"
         while not self.stop_event.is_set():
-            self._buzz(self.mode)
+            self.buzz(self.mode)
 
         # reset the GPIO ping to cut the sound
         GPIO.setup(self.buzzer_pin, GPIO.IN)
 
-    def _buzz(self, mode):
+    def buzz(self, mode):
 
         if mode == 1:   # this is the mode used when a sensor detect something
             delay = 0.1
@@ -50,6 +50,13 @@ class BuzzerManager(threading.Thread):
 
         if mode == 2:   # this mode is used to count seconds before the system is armed
             delay = 1
+            GPIO.output(self.buzzer_pin, False)  # set pin to low, the buzzer is buzzing
+            time.sleep(delay)  # wait with pin low
+            GPIO.output(self.buzzer_pin, True)  # set pin to high
+            time.sleep(delay)  # wait with pin high
+
+        if mode == 3:     # this is used when we scan a card.
+            delay = 0.1
             GPIO.output(self.buzzer_pin, False)  # set pin to low, the buzzer is buzzing
             time.sleep(delay)  # wait with pin low
             GPIO.output(self.buzzer_pin, True)  # set pin to high
