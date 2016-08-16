@@ -80,6 +80,20 @@ class ScreenManager:
         else:
             self.set_enabled()
 
+    def print_invalid_card(self, status):
+        """
+        Print Invalid RFID card on the screen and go back to the last status
+        :return:
+        """
+        self.reset()
+        self.ui.lcd_print("Invalid card")
+        time.sleep(2)
+        # show back the last status
+        if status == "disabled":
+            self.set_disabled()
+        else:
+            self.set_enabled()
+
     def switch_light(self):
         if self.light_status == "on":
             # so we switch to off

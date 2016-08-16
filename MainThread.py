@@ -1,9 +1,10 @@
 import threading
 import Queue
-from Controllers import ScreenManager, KeypadManager, BuzzerManager, ArduinoManager
+from Controllers import ScreenManager, KeypadManager, BuzzerManager, ArduinoManager, RFIDrc522Manager
 import time
 from flask import Flask
 from RestAPI import FlaskAPI
+from Utils.utils import *
 
 
 class MainThread(threading.Thread):
@@ -13,6 +14,9 @@ class MainThread(threading.Thread):
         # init a status
         self.status = "disabled"
         self.arming_in_pogress = False
+
+        # load settings file
+        self.cfg = get_settings()
 
         # this is used to stop the arming thread
         self.pill2kill = None
@@ -32,6 +36,13 @@ class MainThread(threading.Thread):
 
         # Create a buzzer object
         self.buzzer = BuzzerManager()
+
+        # prepare a queue to share data between this threads and the keyboard
+        self.shared_queue_rfid_reader = Queue.Queue()
+
+        # run the thread that handle RFID
+        rfid = RFIDrc522Manager(self.shared_queue_rfid_reader)
+        rfid.start()
 
         # create a shared queue for passing message between flask api and this thread
         self.shared_queue_message_from_api = Queue.Queue()
@@ -71,9 +82,10 @@ class MainThread(threading.Thread):
                     if len(self.code_buffer) == 4:
                         self._test_pin_code()
                         self.code_buffer = ""
-            if not self.shared_queue_message_from_api.empty():
-                val = self.shared_queue_keyborad.get()
-                print "Received command from API ", val
+            if not self.shared_queue_rfid_reader.empty():
+                val = self.shared_queue_rfid_reader.get()
+                print "Received UID from RFID ", val
+                self._test_rfid_uid(val)
 
             time.sleep(0.1)
 
@@ -119,7 +131,7 @@ class MainThread(threading.Thread):
                 if not stop_event.is_set():
                     # switch status
                     screen_manager.set_enabled()
-                    screen_manager.status = "enabled"
+                    self.status = "enabled"
                     # stop buzzing
                     self.buzzer.stop()
                     # Stop this thread
@@ -133,6 +145,7 @@ class MainThread(threading.Thread):
         t = threading.Thread(target=doit, args=(self.pill2kill, self.screen_manager))
         t.start()
         # we start the buzzer
+        self.buzzer = BuzzerManager()
         self.buzzer.mode = 2
         self.buzzer.start()
 
@@ -155,4 +168,19 @@ class MainThread(threading.Thread):
         else:
             print "Stop the siren"
             self.arduino.stop_siren()
+
+    def _test_rfid_uid(self, uid):
+        # we bip to notify the user that we scanned the card
+        self.buzzer = BuzzerManager()
+        self.buzzer.mode = 3
+        self.buzzer.start()
+        self.buzzer.stop()
+
+        if uid in self.cfg['rfid']['valid_uid']:
+            print "Valid UID"
+            self._switch_status()
+        else:
+            print "Invalid UID"
+            self.screen_manager.print_invalid_card(self.status)
+
 

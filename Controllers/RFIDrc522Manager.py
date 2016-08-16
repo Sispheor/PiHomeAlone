@@ -41,3 +41,4 @@ class RFIDrc522Manager(threading.Thread):
                 self.shared_queue.put(uid)
                 print "Freeze 3 secondes"
                 time.sleep(3)
+            time.sleep(0.1)
