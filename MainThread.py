@@ -1,6 +1,6 @@
 import threading
 import Queue
-from Controllers import ScreenManager, KeypadManager, BuzzerManager, ArduinoManager, RFIDrc522Manager
+from Controllers import ScreenManager, KeypadManager, BuzzerManager, ArduinoManager, RFIDrc522Manager, Receiver433Manager
 import time
 from flask import Flask
 from RestAPI import FlaskAPI
@@ -13,7 +13,9 @@ class MainThread(threading.Thread):
         super(MainThread, self).__init__(group, target, name, args, kwargs, verbose)
         # init a status
         self.status = "disabled"
+        # self.status = "enabled"
         self.arming_in_pogress = False
+        self.waiting_alarm_disarm = False
 
         # load settings file
         self.cfg = get_settings()
@@ -21,31 +23,35 @@ class MainThread(threading.Thread):
         # this is used to stop the arming thread
         self.pill2kill = None
 
-        # prepare a queue to share data between this threads and the keyboard
+        # keep a buzzer object
+        self.buzzer = None
+
+        # prepare a queue to share data between this threads and other thread
         self.shared_queue_keyborad = Queue.Queue()
+        self.shared_queue_rfid_reader = Queue.Queue()
+        self.shared_queue_433_receiver = Queue.Queue()
+        self.shared_queue_message_from_api = Queue.Queue()
 
         # create an object to manager the screen
         self.screen_manager = ScreenManager()
 
         # create an object to manage the arduino
         self.arduino = ArduinoManager()
+        # TODO remove this in prod
+        self.arduino.stop_siren()
 
         # run the keypad thread
         self.keypad_thread = KeypadManager(self.shared_queue_keyborad)
         self.keypad_thread.start()
 
-        # Create a buzzer object
-        self.buzzer = BuzzerManager()
-
-        # prepare a queue to share data between this threads and the keyboard
-        self.shared_queue_rfid_reader = Queue.Queue()
-
         # run the thread that handle RFID
         rfid = RFIDrc522Manager(self.shared_queue_rfid_reader)
         rfid.start()
 
-        # create a shared queue for passing message between flask api and this thread
-        self.shared_queue_message_from_api = Queue.Queue()
+        # create an object to store the reveicer433 thread
+        # self.receiver443 = Receiver433Manager(self.shared_queue_433_receiver)
+        # self.receiver443.start()
+        self.receiver443 = None
 
         # create the flask rest api
         app = Flask(__name__)
@@ -53,9 +59,9 @@ class MainThread(threading.Thread):
         flask_api.start()
 
         # Save a buffer where we put each typed number
-        # TODO Should be in config file
         self.code_buffer = ""
-        self.valid_key = "1234"
+        # The valid pin code
+        self.valid_key = self.cfg["pin_code"]
 
     def run(self):
         print "Run main thread"
@@ -86,6 +92,10 @@ class MainThread(threading.Thread):
                 val = self.shared_queue_rfid_reader.get()
                 print "Received UID from RFID ", val
                 self._test_rfid_uid(val)
+            if not self.shared_queue_433_receiver.empty():
+                val = self.shared_queue_433_receiver.get()
+                print "Received UID from 433 receiver ", val
+                self._test_433_uid(val)
 
             time.sleep(0.1)
 
@@ -96,7 +106,8 @@ class MainThread(threading.Thread):
         If the code is wrong we show a notification on the screen
         :return:
         """
-        if self.code_buffer == self.valid_key:
+        print "Valid code is %s" % self.valid_key
+        if str(self.code_buffer) == str(self.valid_key):
             print "Code valid"
             self._switch_status()
         else:
@@ -112,8 +123,14 @@ class MainThread(threading.Thread):
             # the system was disabled, arming during 20 secondes with thread
             self.delayed_enableling()
         else:
+            # stop arduino counter
+            self.arduino.cancel_delayed_siren()
+            # stop siren 
+            self.arduino.stop_siren()
             self.screen_manager.set_disabled()
             self.status = "disabled"
+            if self.waiting_alarm_disarm:
+                self.pill2kill.set()
 
     def delayed_enableling(self):
         """
@@ -134,10 +151,13 @@ class MainThread(threading.Thread):
                     self.status = "enabled"
                     # stop buzzing
                     self.buzzer.stop()
+                    # start the 433 receiver thread
+                    self.start_receiver433()
                     # Stop this thread
                     self.pill2kill.set()
 
         self.arming_in_pogress = True
+        self.arduino.stop_siren()
         self.screen_manager.reset()
         self.screen_manager.ui.lcd_print("Arming...")
         self.screen_manager.ui.set_cursor(2, 2)
@@ -182,5 +202,55 @@ class MainThread(threading.Thread):
         else:
             print "Invalid UID"
             self.screen_manager.print_invalid_card(self.status)
+
+    def start_receiver433(self):
+        self.receiver443 = Receiver433Manager(self.shared_queue_433_receiver)
+        self.receiver443.start()
+
+    def _test_433_uid(self, uid):
+        """
+        Test the received uid against settings uid. Should be always a valid code
+        :param uid: received ID from the 433MHZ receiver sent by a sensor
+        :return:
+        """
+        for el in self.cfg['door_sensor']:
+            if uid == el['id']:
+                print "Valid sensor ID from %s" % el['location']
+                # something has been detected
+                self.delayed_alarm(el['location'])
+                # not need to test other ID
+                break
+            else:
+                print "Sensor ID not reconized"
+
+    def delayed_alarm(self, location):
+        """
+        Send a notification to the arduino, this one will sounds the alarm if no code provided
+        :param location: String location to show on screen
+        :return:
+        """
+        def doit(stop_event):
+            while not stop_event.is_set():
+                # wait 20 secondes
+                stop_event.wait(20)
+            self.buzzer.stop()
+
+        # stop the receiver, we do not need it anymore, intrusion already detected
+        self.receiver443.stop()
+        # send notification to the arduino
+        self.arduino.delayed_siren()
+        # show info on screen
+        self.screen_manager.set_intrustion_detected(location)
+        # set a boolean so next pressed key from the keypad will be used to disable the alarm
+        self.waiting_alarm_disarm = True
+        # wait 20 sec the code to disable the alarm
+        self.pill2kill = threading.Event()
+        t = threading.Thread(target=doit, args=(self.pill2kill,))
+        t.start()
+        # we start the buzzer
+        self.buzzer = BuzzerManager()
+        self.buzzer.mode = 1
+        self.buzzer.start()
+
 
 

@@ -3,8 +3,16 @@
 # Use YAML syntax
 # ---------------------
 
+# This is the valid pin code to type to enable or disable the alarm
+pin_code: 1234
 
+# Valid UID captured by the RFID reader
 rfid:
   valid_uid:
     - [52, 100, 147, 133, 70]
     - [197, 86, 167, 117, 65]
+
+# Valid UID captured by the 433MHZ receiver
+door_sensor:
+  - id: 6481558
+    location: Kitchen

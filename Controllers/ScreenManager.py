@@ -14,6 +14,7 @@ class ScreenManager:
         """
         self.ui = b.BV4242(0x3d, 1)
         self.set_disabled()
+        # self.set_enabled()
         self.light_status = "on"
         self.pill2kill = None
 
@@ -114,5 +115,13 @@ class ScreenManager:
         self.reset()
         self.ui.lcd_print("Cancelled")
 
-
-
+    def set_intrustion_detected(self, location):
+        """
+        Show intrusion detected message
+        :param location:
+        :return:
+        """
+        self.reset()
+        self.ui.lcd_print(location)
+        self.ui.set_cursor(2, 2)
+        self.ui.lcd_print("Enter code:")
