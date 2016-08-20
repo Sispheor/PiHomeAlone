@@ -24,7 +24,7 @@ class FlaskAPI(threading.Thread):
         get the current alarm status
         """
         data = {
-            "alarm_status": self.main_thread.status,
+            "alarm_status": self.main_thread.fsm.current,
             "siren_status": self.main_thread.arduino.get_siren_status()
         }
         return jsonify(data), 200

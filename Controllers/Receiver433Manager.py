@@ -18,6 +18,7 @@ class Receiver433Manager(threading.Thread):
         self.stop_event = threading.Event()
 
     def run(self):
+        print "Starting receiver 433"
         while not self.stop_event.is_set():
             if self.receiver.available():
                 received_value = self.receiver.getReceivedValue()
