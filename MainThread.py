@@ -129,7 +129,7 @@ class MainThread(threading.Thread):
         """
         def doit(stop_event, screen_manager):
             while not stop_event.is_set():
-                for x in range(20, 0, -5):
+                for x in range(15, 0, -5):
                     if not stop_event.is_set():
                         screen_manager.ui.lcd_print("%s.." % str(x))
                         stop_event.wait(5)
@@ -156,6 +156,7 @@ class MainThread(threading.Thread):
         # stop buzzing
         self.buzzer.stop()
         # start the 433 receiver thread
+        self.shared_queue_433_receiver = Queue.Queue()
         self.receiver443 = Receiver433Manager(self.shared_queue_433_receiver)
         self.receiver443.start()
         # Stop the counter thread
