@@ -1,8 +1,19 @@
 # PiHomeAlone
 
+PiHomeAlone is a Raspberry/Arduino project to make your own home alarm system.
+
 ## Installation
 
+### Circuit 
+
+### Code
+
 ## Usage
+
+Run the program as root. Some libs will not work without root privilege
+```
+sudo python PiHomeAlone.py
+```
 
 ## Contributing
 1. Fork it!

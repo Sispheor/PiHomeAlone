@@ -1,12 +1,13 @@
 import threading
 import Queue
 from Controllers import ScreenManager, KeypadManager, BuzzerManager, ArduinoManager, RFIDrc522Manager, \
-    Receiver433Manager
+    Receiver433Manager, AdafruitScreenManager
 import time
 from flask import Flask
 from RestAPI import FlaskAPI
 from Utils.utils import *
 from fysom import Fysom
+import sys
 
 
 class MainThread(threading.Thread):
@@ -27,9 +28,15 @@ class MainThread(threading.Thread):
         self.shared_queue_433_receiver = Queue.Queue()
         self.shared_queue_message_from_api = Queue.Queue()
         # create an object to manage the screen
-        self.screen_manager = ScreenManager()
+        # self.screen_manager = ScreenManager()
+        self.screen_manager = AdafruitScreenManager()
         # create an object to manage the arduino
         self.arduino = ArduinoManager()
+        try:
+            self.arduino.ping()
+        except IOError:
+            self.screen_manager.set_arduino_connection_missing()
+            sys.exit(0)
         # TODO remove this in prod, get the current status instead from the arduino itself
         self.arduino.stop_siren()
         # run the keypad thread
@@ -131,15 +138,14 @@ class MainThread(threading.Thread):
             while not stop_event.is_set():
                 for x in range(15, 0, -5):
                     if not stop_event.is_set():
-                        screen_manager.ui.lcd_print("%s.." % str(x))
+                        screen_manager.lcd.message("%s.." % str(x))
                         stop_event.wait(5)
                 # counter over, if the user has not cancel, we active the alarm
                 if not stop_event.is_set():
                     self.fsm.enable()
 
         self.screen_manager.reset()
-        self.screen_manager.ui.lcd_print("Arming...")
-        self.screen_manager.ui.set_cursor(2, 2)
+        self.screen_manager.lcd.message("Arming...\n")
         self.pill2kill = threading.Event()
         t = threading.Thread(target=doit, args=(self.pill2kill, self.screen_manager))
         t.start()
@@ -199,6 +205,7 @@ class MainThread(threading.Thread):
         Switch alarm
         """
         self.buzzer.stop()
+        self.screen_manager.set_alarm()
         # we keep the last state in memory
         self.last_state = "alarming"
 

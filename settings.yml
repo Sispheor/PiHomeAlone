@@ -1,9 +1,9 @@
 # ---------------------
-# DogIzPi settings
+# PiHomeAlone settings
 # Use YAML syntax
 # ---------------------
 
-# This is the valid pin code to type to enable or disable the alarm
+# This is the valid pin code to type to enable or disable the alarm from the keyboard
 pin_code: 1234
 
 # Valid UID captured by the RFID reader

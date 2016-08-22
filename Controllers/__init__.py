@@ -5,3 +5,4 @@ from BuzzerManager import BuzzerManager
 from TestThread import TestThread
 from RFIDrc522Manager import RFIDrc522Manager
 from Receiver433Manager import Receiver433Manager
+from AdafruitScreenManager import AdafruitScreenManager
