@@ -38,3 +38,4 @@ class Receiver433Manager(threading.Thread):
         :return:
         """
         self.stop_event.set()
+        self.receiver.resetAvailable()
