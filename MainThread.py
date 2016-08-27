@@ -1,7 +1,7 @@
 import threading
 import Queue
-from Controllers import ScreenManager, KeypadManager, BuzzerManager, ArduinoManager, RFIDrc522Manager, \
-    Receiver433Manager, AdafruitScreenManager
+from Controllers import BuzzerManager, ArduinoManager, RFIDrc522Manager, Receiver433Manager, AdafruitScreenManager, \
+    MatrixKeypadManager
 import time
 from flask import Flask
 from RestAPI import FlaskAPI
@@ -14,6 +14,7 @@ class MainThread(threading.Thread):
 
     def __init__(self, group=None, target=None, name=None, args=(), kwargs=None, verbose=None):
         super(MainThread, self).__init__(group, target, name, args, kwargs, verbose)
+        self.debug = True
 
         # load settings file
         self.cfg = get_settings()
@@ -21,15 +22,16 @@ class MainThread(threading.Thread):
         self.pill2kill = None
         # keep a buzzer object to stop it from every function. same for the receiver433
         self.buzzer = None
-        self.receiver443 = None
+
         # prepare a queue to share data between this threads and other thread
         self.shared_queue_keyborad = Queue.Queue()
         self.shared_queue_rfid_reader = Queue.Queue()
         self.shared_queue_433_receiver = Queue.Queue()
         self.shared_queue_message_from_api = Queue.Queue()
+
         # create an object to manage the screen
-        # self.screen_manager = ScreenManager()
         self.screen_manager = AdafruitScreenManager()
+
         # create an object to manage the arduino
         self.arduino = ArduinoManager()
         try:
@@ -39,19 +41,27 @@ class MainThread(threading.Thread):
             sys.exit(0)
         # TODO remove this in prod, get the current status instead from the arduino itself
         self.arduino.stop_siren()
+
         # run the keypad thread
-        self.keypad_thread = KeypadManager(self.shared_queue_keyborad)
+        self.keypad_thread = MatrixKeypadManager(self.shared_queue_keyborad)
         self.keypad_thread.start()
+
         # run the thread that handle RFID
         rfid = RFIDrc522Manager(self.shared_queue_rfid_reader)
         rfid.start()
+
+        # keep 433 receiver thread object in mind
+        self.receiver443 = None
+
         # create the flask rest api
         app = Flask(__name__)
         flask_api = FlaskAPI(app, self.shared_queue_message_from_api, self)
         flask_api.start()
+
         # Save a buffer where we put each typed number
         self.code_buffer = ""
         self.last_state = "disabled"
+
         # create the state machine
         self.fsm = Fysom({'initial': 'disabled',
                           'events': [
@@ -77,7 +87,7 @@ class MainThread(threading.Thread):
                 print "Key received from keypad: ", val
                 if val == "switch_light":
                     self.screen_manager.switch_light()
-                elif val == "cancel" or val == "enter":
+                elif val == "C":
                     # cancel only if we were in arming status
                     if self.fsm.current == "arming":
                         self.fsm.disable()
@@ -135,8 +145,11 @@ class MainThread(threading.Thread):
         :return:
         """
         def doit(stop_event, screen_manager):
+            max_time = 15
+            if self.debug:
+                max_time = 5
             while not stop_event.is_set():
-                for x in range(15, 0, -5):
+                for x in range(max_time, 0, -5):
                     if not stop_event.is_set():
                         screen_manager.lcd.message("%s.." % str(x))
                         stop_event.wait(5)
@@ -162,7 +175,6 @@ class MainThread(threading.Thread):
         # stop buzzing
         self.buzzer.stop()
         # start the 433 receiver thread
-        self.shared_queue_433_receiver = Queue.Queue()
         self.receiver443 = Receiver433Manager(self.shared_queue_433_receiver)
         self.receiver443.start()
         # Stop the counter thread
@@ -182,6 +194,11 @@ class MainThread(threading.Thread):
                 stop_event.wait(20)
                 stop_event.set()
             self.buzzer.stop()
+            # if we are still waiting the code after 20 sec, then alarm
+            print "End of the 20 second delay to disable the alarm"
+            print "Alarm status is: %s" % self.fsm.current
+            if self.fsm.current == "waiting_code":
+                self.fsm.alarm()
 
         # stop the receiver, we do not need it anymore, intrusion already detected
         self.receiver443.stop()
@@ -204,6 +221,7 @@ class MainThread(threading.Thread):
         """
         Switch alarm
         """
+        print "Alarm !!"
         self.buzzer.stop()
         self.screen_manager.set_alarm()
         # we keep the last state in memory
@@ -251,10 +269,11 @@ class MainThread(threading.Thread):
 
     def _test_rfid_uid(self, uid):
         # one little bip to notify the user that we scanned the card
-        buzzer = BuzzerManager()
-        buzzer.mode = 3
-        buzzer.start()
-        buzzer.stop()
+        self.buzzer = BuzzerManager()
+        self.buzzer.mode = 3
+        self.buzzer.start()
+        time.sleep(1)
+        self.buzzer.stop()
 
         if uid in self.cfg['rfid']['valid_uid']:
             print "Valid UID"

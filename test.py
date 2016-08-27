@@ -1,6 +1,8 @@
-from Controllers.AdafruitScreenManager import AdafruitScreenManager
+from Controllers.ArduinoManager import ArduinoManager
 
-screen_manager = AdafruitScreenManager()
+nano = ArduinoManager()
 
-screen_manager.set_intrustion_detected("Salon")
+nano.ping()
+
+
 

@@ -42,18 +42,18 @@ void setup() {
 void loop() {
   if (delayed_siren_asked){
     myDelay(delay_time);  // wait the delay
-    Serial.print("Delay over. ");
+    Serial.print("Delay over. delayed_siren_canceled Bool is: ");
+    Serial.println(delayed_siren_canceled);
     // check if the user has canceled before the end of the delay time
-    if (delayed_siren_canceled){
+    if (delayed_siren_canceled == true){
       Serial.println("Delayed siren canceled by the user. Do not start the siren");
-      delayed_siren_asked = false;
-      delayed_siren_canceled = false;
     }else{
       Serial.println("Delayed siren not canceled by the user. Alarm !!!");
       startSiren();
-      delayed_siren_asked = false;
-      delayed_siren_canceled = false;
     }
+    // reset state
+    delayed_siren_asked = false;
+    delayed_siren_canceled = false;
   }
 
   // take a breath

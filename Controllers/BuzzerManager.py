@@ -25,11 +25,6 @@ class BuzzerManager(threading.Thread):
     def run(self):
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.buzzer_pin, GPIO.OUT)
-        self.play()
-
-    def play(self):
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(self.buzzer_pin, GPIO.OUT)
         print "Playing Buzzer until stop event"
         while not self.stop_event.is_set():
             self.buzz(self.mode)
