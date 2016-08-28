@@ -62,3 +62,34 @@ The output should look like the following and you should have listened the buzze
 Play sound for 3 secondes
 Stop buzzing
 ```
+
+## Test the connectivity Arduino / Raspberry Pi
+Get your i2c bus address
+```
+sudo i2cdetect -y 1
+```
+
+This is an example output:
+```
+     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
+00:          -- -- -- -- -- -- -- -- -- -- -- -- -- 
+10: -- -- 12 -- -- -- -- -- -- -- -- -- -- -- -- -- 
+20: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+30: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+40: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+50: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+60: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+70: -- -- -- -- -- -- -- -- 
+```
+
+In this case, my arduino is listening on the base 16 bus address is 0x12
+
+Run the script with the address as argument
+```
+python tests/test_arduino_rpi_connection.py 0x12
+```
+
+The correct output is:
+```
+Response from aduino: Pong
+```
