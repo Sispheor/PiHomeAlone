@@ -1,6 +1,8 @@
 import Adafruit_CharLCD as LCD
 import time
 
+from Utils.TimerReset import TimerReset
+
 RED = 1.0, 0.0, 0.0
 GREEN = 0.0, 1.0, 0.0
 BLUE = 0.0, 0.0, 1.0
@@ -27,6 +29,28 @@ class AdafruitScreenManager:
         self.lcd.create_char(6, PIXEL_SELECTOR)
 
         self.light_status = "on"
+        # thread to turn off the screen automaticaly
+        self.timer = TimerReset(10, self.turn_light_off)
+
+    def _check_timer_alive(function):
+        """
+        A decorator class to reset the timer that will turn off the screen automatically
+        :return:
+        """
+
+        def wrapper_original_function(self, *args, **kwargs):
+            print "check timer is alive"
+            if self.timer.isAlive():
+                print "timer still aline, reseting it"
+                self.timer.reset(10)
+            else:
+                print "timer not anymore alive, recreating a new one"
+                self.turn_light_on()
+                self.timer = TimerReset(10, self.turn_light_off)
+                self.timer.start()
+            # call the initial function
+            function(self, *args, **kwargs)
+        return wrapper_original_function
 
     def reset(self):
         """
@@ -37,6 +61,7 @@ class AdafruitScreenManager:
         self.lcd.show_cursor(False)
         self.lcd.set_color(*BLUE)
 
+    @_check_timer_alive
     def set_disabled(self):
         """
         By default the screnn show that the service is Disabled
@@ -47,6 +72,7 @@ class AdafruitScreenManager:
         self.lcd.blink(True)
         self.lcd.set_color(*WHITE)
 
+    @_check_timer_alive
     def set_enabled(self):
         """
         By default the screnn show that the service is Enabled
@@ -57,6 +83,7 @@ class AdafruitScreenManager:
         self.lcd.blink(True)
         self.lcd.set_color(*GREEN)
 
+    @_check_timer_alive
     def print_invalid_code(self, status):
         """
         Print Invalid code on the screen and go back to the last status
@@ -71,6 +98,7 @@ class AdafruitScreenManager:
         else:
             self.set_enabled()
 
+    @_check_timer_alive
     def print_invalid_card(self, status):
         """
         Print Invalid RFID card on the screen and go back to the last status
@@ -95,6 +123,7 @@ class AdafruitScreenManager:
             self.lcd.set_backlight(1)
             self.light_status = "on"
 
+    @_check_timer_alive
     def cancel_arming(self):
         """
         The user has canceled the arming of the system.
@@ -106,6 +135,7 @@ class AdafruitScreenManager:
         time.sleep(2)
         self.set_disabled()
 
+    @_check_timer_alive
     def set_intrustion_detected(self, location):
         """
         Show intrusion detected message
@@ -118,6 +148,7 @@ class AdafruitScreenManager:
         self.lcd.blink(True)
         self.lcd.set_color(*YELLOW)
 
+    @_check_timer_alive
     def add_star(self):
         """
         Add a "*" to the last char of the screen
@@ -134,6 +165,7 @@ class AdafruitScreenManager:
         self.lcd.set_color(*RED)
         self.lcd.message("Fail! No Arduino\nconnection")
 
+    @_check_timer_alive
     def set_alarm(self):
         """
         Siren on, switch screen to red
@@ -142,3 +174,12 @@ class AdafruitScreenManager:
         self.reset()
         self.lcd.set_color(*RED)
         self.lcd.message("Alarm!\nEnter code:")
+
+    def turn_light_off(self):
+        self.lcd.set_backlight(0)
+        self.light_status = "off"
+
+    def turn_light_on(self):
+        self.lcd.set_backlight(1)
+        self.light_status = "on"
+
