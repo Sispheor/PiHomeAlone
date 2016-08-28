@@ -15,8 +15,8 @@ try:
         ["*", 0, "#", "D"]
     ]
 
-    ROW_PINS = [5,6,13,19] # BCM numbering
-    COL_PINS = [26,12,16,20] # BCM numbering
+    ROW_PINS = [5, 6, 13, 19]  # BCM numbering
+    COL_PINS = [26, 12, 16, 20]  # BCM numbering
 
     factory = rpi_gpio.KeypadFactory()
     keypad = factory.create_keypad(keypad=KEYPAD, row_pins=ROW_PINS, col_pins=COL_PINS)

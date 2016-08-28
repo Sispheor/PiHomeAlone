@@ -23,9 +23,10 @@ class Receiver433Manager(threading.Thread):
             if self.receiver.available():
                 received_value = self.receiver.getReceivedValue()
                 if received_value:
-                    # print received_value
+                    print "Receiver 433; Received id: %s" % received_value
                     # send the value to the main thread
-                    self.shared_queue.put(received_value)
+                    if self.shared_queue is not None:
+                        self.shared_queue.put(received_value)
                     # wait before listen again
                     time.sleep(1)
             self.receiver.resetAvailable()

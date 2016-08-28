@@ -18,3 +18,5 @@ rfid:
 door_sensor:
   - id: 6481558
     location: Kitchen
+  - id: 1234567
+    location: Living
