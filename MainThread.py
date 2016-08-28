@@ -14,8 +14,6 @@ class MainThread(threading.Thread):
 
     def __init__(self, group=None, target=None, name=None, args=(), kwargs=None, verbose=None):
         super(MainThread, self).__init__(group, target, name, args, kwargs, verbose)
-        self.debug = True
-
         # load settings file
         self.cfg = get_settings()
         # this is used to stop the arming thread
@@ -83,7 +81,7 @@ class MainThread(threading.Thread):
             if not self.shared_queue_keyborad.empty():
                 val = self.shared_queue_keyborad.get()
                 print "Key received from keypad: ", val
-                if val == "switch_light":
+                if val == "D":
                     self.screen_manager.switch_light()
                 elif val == "C":
                     # cancel only if we were in arming status
@@ -144,7 +142,7 @@ class MainThread(threading.Thread):
         """
         def doit(stop_event, screen_manager):
             max_time = 15
-            if self.debug:
+            if self.cfg["debug"]:
                 max_time = 5
             while not stop_event.is_set():
                 for x in range(max_time, 0, -5):

@@ -2,6 +2,8 @@
 # PiHomeAlone settings
 # Use YAML syntax
 # ---------------------
+# debuf mode
+debug: True
 
 # This is the valid pin code to type to enable or disable the alarm from the keyboard
 pin_code: 1234
