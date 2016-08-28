@@ -18,5 +18,7 @@ rfid:
 sensors:
   - id: 6481558
     location: Kitchen
-  - id: 1234567
-    location: Living
+  - id: 9532938
+    location: Living room
+  - id: 15732234
+    location: Bed room

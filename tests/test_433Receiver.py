@@ -1,11 +1,24 @@
 from pi_switch import RCSwitchReceiver
+import signal
+
+continue_reading = True
+
+
+# Capture SIGINT for cleanup when the script is aborted
+def end_read(signal,frame):
+    global continue_reading
+    print "Ctrl+C captured, ending read."
+    continue_reading = False
+
+# Hook the SIGINT
+signal.signal(signal.SIGINT, end_read)
 
 receiver = RCSwitchReceiver()
 receiver.enableReceive(2)
 
 num = 0
 print "Receiver started, now play with your sensors"
-while True:
+while continue_reading:
     if receiver.available():
         received_value = receiver.getReceivedValue()
         if received_value:

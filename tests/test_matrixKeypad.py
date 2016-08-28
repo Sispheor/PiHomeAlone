@@ -5,7 +5,7 @@ import time
 
 
 def print_key(key):
-    print(key)
+    print "Pressed key %s" % key
 
 try:
     KEYPAD = [

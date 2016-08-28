@@ -1,3 +1,10 @@
+import sys
+import os
+
+CUR_FOLDER = os.path.dirname(os.path.abspath(__file__))
+PARENT_FOLDER = os.path.dirname(CUR_FOLDER)
+sys.path.append(PARENT_FOLDER)
+
 import RPi.GPIO as GPIO
 from Utils.MFRC522 import MFRC522
 import signal
@@ -16,7 +23,7 @@ def end_read(signal,frame):
 signal.signal(signal.SIGINT, end_read)
 
 # Create an object of the class MFRC522
-MIFAREReader = MFRC522.MFRC522()
+MIFAREReader = MFRC522()
 
 # Welcome message
 print "Welcome to the MFRC522 data read example"
