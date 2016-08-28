@@ -80,23 +80,30 @@ void receiveData(int byteCount) {
     Serial.println(dataReceived);
     switch (dataReceived) {
       case 1:    // start the siren
+        Serial.println("Order: Start the siren");
         startSiren();
         break;
       case 2: // stop the siren
+        Serial.println("Order: Stop the siren");
         stopSiren();
         break;
       case 3:   // delayed siren
+        Serial.println("Order: Delayed siren");
         if (!delayed_siren_asked){
+          delayed_siren_canceled = false;
           delayedSiren();
         }
         break;
       case 4: // cancel the delayed siren
+        Serial.println("Order: Cancel the delayed siren");
         cancelDelayedSiren();
         break;
       case 5: // ping
+        Serial.println("Order: Ping");
         pong();
       break;
       case 6: // get the current siren status
+        Serial.println("Order: Get siren status");
         get_siren_status();
         break;
     }

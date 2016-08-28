@@ -139,4 +139,6 @@ class AdafruitScreenManager:
         Siren on, switch screen to red
         :return:
         """
+        self.reset()
         self.lcd.set_color(*RED)
+        self.lcd.message("Alarm!\nEnter code:")

@@ -39,8 +39,6 @@ class MainThread(threading.Thread):
         except IOError:
             self.screen_manager.set_arduino_connection_missing()
             sys.exit(0)
-        # TODO remove this in prod, get the current status instead from the arduino itself
-        self.arduino.stop_siren()
 
         # run the keypad thread
         self.keypad_thread = MatrixKeypadManager(self.shared_queue_keyborad)
@@ -63,7 +61,7 @@ class MainThread(threading.Thread):
         self.last_state = "disabled"
 
         # create the state machine
-        self.fsm = Fysom({'initial': 'disabled',
+        self.fsm = Fysom({'initial': self._get_initial_state(),
                           'events': [
                               {'name': 'arm', 'src': 'disabled', 'dst': 'arming'},
                               {'name': 'enable', 'src': 'arming', 'dst': 'enabled'},
@@ -222,7 +220,8 @@ class MainThread(threading.Thread):
         Switch alarm
         """
         print "Alarm !!"
-        self.buzzer.stop()
+        if self.buzzer is not None:
+            self.buzzer.stop()
         self.screen_manager.set_alarm()
         # we keep the last state in memory
         self.last_state = "alarming"
@@ -298,6 +297,18 @@ class MainThread(threading.Thread):
             else:
                 print "Sensor ID not reconized"
 
+    def _get_initial_state(self):
+        """
+        Get the initial state of the system. can be "disabled" if the siren is off
+        or "alarm" if the siren is on
+        :return:
+        """
+        siren_status = self.arduino.get_siren_status()
+
+        if siren_status == "off":
+            return "disabled"
+        else:
+            return "alarming"
 
 
 
