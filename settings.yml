@@ -15,7 +15,7 @@ rfid:
     - [197, 86, 167, 117, 65]
 
 # Valid UID captured by the 433MHZ receiver
-door_sensor:
+sensors:
   - id: 6481558
     location: Kitchen
   - id: 1234567

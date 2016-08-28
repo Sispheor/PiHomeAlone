@@ -285,7 +285,7 @@ class MainThread(threading.Thread):
         :param uid: received ID from the 433MHZ receiver sent by a sensor
         :return:
         """
-        for el in self.cfg['door_sensor']:
+        for el in self.cfg['sensors']:
             if uid == el['id']:
                 print "Valid sensor ID from %s" % el['location']
                 # something has been detected
