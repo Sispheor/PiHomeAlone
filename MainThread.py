@@ -28,7 +28,10 @@ class MainThread(threading.Thread):
         self.shared_queue_message_from_api = Queue.Queue()
 
         # create an object to manage the screen
-        self.screen_manager = AdafruitScreenManager()
+        try:
+            self.screen_manager = AdafruitScreenManager()
+        except IOError:
+            raise Exception("No connection with the screen")
 
         # create an object to manage the arduino
         self.arduino = ArduinoManager()
@@ -194,7 +197,7 @@ class MainThread(threading.Thread):
             print "End of the 20 second delay to disable the alarm"
             print "Alarm status is: %s" % self.fsm.current
             if self.fsm.current == "waiting_code":
-                self.fsm.alarm()
+                self.fsm.alarm(location=e.location)
 
         # stop the receiver, we do not need it anymore, intrusion already detected
         self.receiver443.stop()
@@ -223,6 +226,14 @@ class MainThread(threading.Thread):
         self.screen_manager.set_alarm()
         # we keep the last state in memory
         self.last_state = "alarming"
+        try:
+            location = e.location
+            # send a notification
+            message = "Intrusion: %s" % e.location
+            notify(message)
+        except AttributeError:
+            print "No location in memory"
+
 
     def _test_pin_code(self):
         """

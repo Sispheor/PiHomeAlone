@@ -2,7 +2,7 @@
 # PiHomeAlone settings
 # Use YAML syntax
 # ---------------------
-# debuf mode
+# debug mode
 debug: True
 
 # This is the valid pin code to type to enable or disable the alarm from the keyboard
@@ -21,7 +21,7 @@ sensors:
   - id: 9532938
     location: Living room
   - id: 15732234
-    location: Bed room
+    location: Bedroom
 
 
 # ---------------------------
@@ -33,5 +33,3 @@ backends:
     - pushetta
 
 pushetta:
-  api_key: thisismytoken
-  channel_name: my_chanel
