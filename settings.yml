@@ -22,3 +22,16 @@ sensors:
     location: Living room
   - id: 15732234
     location: Bed room
+
+
+# ---------------------------
+# Availlable backends:
+#
+# Pushetta: http://www.pushetta.com/
+#
+backends:
+    - pushetta
+
+pushetta:
+  api_key: thisismytoken
+  channel_name: my_chanel
