@@ -45,7 +45,8 @@ class AdafruitScreenManager:
                 self.timer.reset(10)
             else:
                 print "timer not anymore alive, recreating a new one"
-                self.turn_light_on()
+                if function.__name__ != "switch_light":  # switch light function will handle this part
+                    self.turn_light_on()
                 self.timer = TimerReset(10, self.turn_light_off)
                 self.timer.start()
             # call the initial function
@@ -113,6 +114,7 @@ class AdafruitScreenManager:
         else:
             self.set_enabled()
 
+    @_check_timer_alive
     def switch_light(self):
         if self.light_status == "on":
             # so we switch to off
