@@ -24,7 +24,24 @@ sensors:
     location: Bedroom
 
 
+# This is the time an user will have to disable he system after an intrusion detection.
+# Not that this settings must be apllied on the Arduino code side. You must set the variable "long delay_time" into the arduino code
+# to the same value as configured here. Aduino talk in milliseconds, RPI in secondes so 20s = 20000ms
+# E.g:
+# RPI settings: wait_time_before_alarm: 20
+# Arduino code: long delay_time = 20000;
+wait_time_before_alarm: 20
+
+# time to enable
+arming_time: 20
+
+# Switch this to true if you want to just receive a notification after the system has switched to alarming status
+notification_only: true
+
 # ---------------------------
+# The notification backend is used to notify the user when the system switch into alarming status.
+# A message that contain the location of the intrusion
+#
 # Availlable backends:
 #
 # Pushetta: http://www.pushetta.com/
@@ -33,3 +50,5 @@ backends:
     - pushetta
 
 pushetta:
+  api_key: a014ed642fc5be3db4fa894ce2a16e8e6e8e38b3
+  channel_name: PiHomeAlone

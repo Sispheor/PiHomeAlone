@@ -144,9 +144,7 @@ class MainThread(threading.Thread):
         :return:
         """
         def doit(stop_event, screen_manager):
-            max_time = 15
-            if self.cfg["debug"]:
-                max_time = 5
+            max_time = self.cfg["arming_time"]
             while not stop_event.is_set():
                 for x in range(max_time, 0, -5):
                     if not stop_event.is_set():
@@ -190,19 +188,17 @@ class MainThread(threading.Thread):
         def doit(stop_event):
             while not stop_event.is_set():
                 # wait 20 secondes
-                stop_event.wait(20)
+                stop_event.wait(self.cfg["wait_time_before_alarm"])
                 stop_event.set()
             self.buzzer.stop()
-            # if we are still waiting the code after 20 sec, then alarm
-            print "End of the 20 second delay to disable the alarm"
-            print "Alarm status is: %s" % self.fsm.current
             if self.fsm.current == "waiting_code":
                 self.fsm.alarm(location=e.location)
 
         # stop the receiver, we do not need it anymore, intrusion already detected
         self.receiver443.stop()
-        # send notification to the arduino
-        self.arduino.delayed_siren()
+        # send notification to the arduino if we are not in notification only mode
+        if not self.cfg["notification_only"]:
+            self.arduino.delayed_siren()
         # show info on screen
         self.screen_manager.set_intrustion_detected(e.location)
         # wait 20 sec the code to disable the alarm
@@ -227,13 +223,11 @@ class MainThread(threading.Thread):
         # we keep the last state in memory
         self.last_state = "alarming"
         try:
-            location = e.location
-            # send a notification
+            # send a notification. e.location can be empty if the Rpi has restarted
             message = "Intrusion: %s" % e.location
             notify(message)
         except AttributeError:
             print "No location in memory"
-
 
     def _test_pin_code(self):
         """
